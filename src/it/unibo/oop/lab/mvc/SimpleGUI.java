@@ -1,9 +1,20 @@
 package it.unibo.oop.lab.mvc;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.LayoutManager;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /**
  * A very simple program using a graphical interface.
@@ -11,43 +22,65 @@ import javax.swing.JFrame;
  */
 public final class SimpleGUI {
 
-    private final JFrame frame = new JFrame();
-
-    /*
-     * Once the Controller is done, implement this class in such a way that:
-     * 
-     * 1) I has a main method that starts the graphical application
-     * 
-     * 2) In its constructor, sets up the whole view
-     * 
-     * 3) The graphical interface consists of a JTextField in the upper part of the frame, 
-     * a JTextArea in the center and two buttons below it: "Print", and "Show history". 
-     * SUGGESTION: Use a JPanel with BorderLayout
-     * 
-     * 4) By default, if the graphical interface is closed the program must exit
-     * (call setDefaultCloseOperation)
-     * 
-     * 5) The behavior of the program is that, if "Print" is pressed, the
-     * controller is asked to show the string contained in the text field on standard output. 
-     * If "show history" is pressed instead, the GUI must show all the prints that
-     * have been done to this moment in the text area.
-     * 
-     */
+    private final JFrame frame = new JFrame("Simple GUI");
+    private final Controller controller;
 
     /**
-     * builds a new {@link SimpleGUI}.
+     * @param controller is the controller used by SimpleGUI
      */
-    public SimpleGUI() {
+    public SimpleGUI(final SimpleController controller) {
+        this.controller = controller;
+        /*
+         * Set up the basic elements
+         */
+        final JTextField stringField = new JTextField();
+        final JTextArea stringArea = new JTextArea();
+        final JButton printButton = new JButton("Print");
+        final JButton showHistoryButton = new JButton("Show history");
+        final JPanel canvas = new JPanel();
+        final JPanel buttonsPanel = new JPanel();
+        final LayoutManager layout = new BorderLayout();
+
+        printButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent arg0) {
+                SimpleGUI.this.controller.setNextStringToPrint(stringField.getText());
+                SimpleGUI.this.controller.printCurrentString();
+            }
+        });
+
+        showHistoryButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent arg0) {
+                final StringBuilder textBuilder = new StringBuilder();
+                final List<String> history = SimpleGUI.this.controller.getPrintedStrings();
+                for (final String print : history) {
+                    textBuilder.append(print);
+                    textBuilder.append('\n');
+                }
+                if (history.isEmpty()) {
+                    textBuilder.deleteCharAt(textBuilder.length() - 1);
+                }
+                stringArea.setText(textBuilder.toString());
+            }
+        });
+        /*
+         * GUI assemblage
+         */
+        canvas.setLayout(layout);
+        stringField.setBackground(Color.LIGHT_GRAY);
+        canvas.add(stringField, BorderLayout.NORTH);
+        stringArea.setEditable(false);
+        canvas.add(stringArea, BorderLayout.CENTER);
+        buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.LINE_AXIS));
+        canvas.add(buttonsPanel, BorderLayout.SOUTH);
+        buttonsPanel.add(printButton);
+        buttonsPanel.add(showHistoryButton);
+        frame.setContentPane(canvas);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         /*
-         * Make the frame half the resolution of the screen. This very method is
-         * enough for a single screen setup. In case of multiple monitors, the
-         * primary is selected.
-         * 
-         * In order to deal coherently with multimonitor setups, other
-         * facilities exist (see the Java documentation about this issue). It is
-         * MUCH better than manually specify the size of a window in pixel: it
-         * takes into account the current resolution.
+         * Frame size
          */
         final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         final int sw = (int) screen.getWidth();
@@ -55,11 +88,19 @@ public final class SimpleGUI {
         frame.setSize(sw / 2, sh / 2);
 
         /*
-         * Instead of appearing at (0,0), upper left corner of the screen, this
-         * flag makes the OS window manager take care of the default positioning
-         * on screen. Results may vary, but it is generally the best choice.
+         * Frame location
          */
         frame.setLocationByPlatform(true);
+    }
+    /**
+     * 
+     */
+    private void show() {
+        frame.setVisible(true);
+    }
+
+    public static void main(final String... args) {
+        new SimpleGUI(new SimpleController()).show();
     }
 
 }
